@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rec Room Revival</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#D62828;--red-dark:#A01A1A;--white:#fff;
+  --off:#F4ECEC;--gray:#7A7070;--dark:#120606;--border:#E2D0D0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--off);color:var(--dark);min-height:100vh;}
+
+/* BOOT LOCK */
+#bootLock{
+  position:fixed;inset:0;z-index:1000;
+  background:radial-gradient(ellipse at top,#2a0808 0%,#080202 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto;
+}
+.bl-logo{
+  font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:5px;
+  color:#fff;margin-bottom:4px;text-align:center;
+}
+.bl-logo span{color:var(--red);}
+.bl-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:28px;text-align:center;}
+.bl-card{
+  background:#fff;border-radius:22px;padding:30px 24px 26px;
+  width:100%;max-width:400px;
+  box-shadow:0 40px 100px rgba(0,0,0,0.7);
+  border-top:4px solid var(--red);
+}
+.bl-head{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+.bl-badge{
+  width:50px;height:50px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--red),var(--red-dark));
+  border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.bl-head h2{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--dark);line-height:1;margin-bottom:3px;}
+.bl-head p{font-size:12px;color:var(--gray);}
+
+/* progress dots */
+.bl-dots{display:flex;gap:6px;margin-bottom:20px;}
+.bl-dot{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background 0.3s;}
+.bl-dot.on{background:var(--red);}
+
+/* fields */
+.bl-label{display:block;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:5px;}
+.bl-inp{
+  width:100%;background:var(--off);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 14px;font-family:'Inter',sans-serif;
+  font-size:14px;color:var(--dark);outline:none;transition:border-color 0.2s,background 0.2s;
+  margin-bottom:14px;
+}
+.bl-inp:focus{border-color:var(--red);background:#fff;}
+.bl-inp.err{border-color:var(--red);background:#fff5f5;}
+textarea.bl-inp{min-height:80px;resize:vertical;}
+
+/* join button */
+#bl-joinBtn{
+  width:100%;padding:15px;border-radius:12px;border:none;
+  font-family:'Inter',sans-serif;font-weight:800;font-size:15px;
+  cursor:pointer;transition:all 0.25s;
+  background:#666;color:rgba(255,255,255,0.6);
+}
+#bl-joinBtn.ready{
+  background:var(--red);color:#fff;
+  box-shadow:0 4px 20px rgba(214,40,40,0.4);
+  animation:pulse 2s ease-in-out infinite;
+}
+#bl-joinBtn:active{transform:scale(0.97);}
+
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,40,40,0.4);}50%{box-shadow:0 0 0 14px rgba(214,40,40,0);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes popIn{from{transform:scale(0.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* HEADER */
+header{
+  background:var(--dark);height:56px;display:flex;align-items:center;
+  padding:0 20px;position:sticky;top:0;z-index:100;
+  border-bottom:2px solid var(--red);
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:#fff;}
+.logo span{color:var(--red);}
+
+/* NAV */
+nav{
+  background:#0a0202;display:flex;overflow-x:auto;
+  border-bottom:1px solid rgba(255,255,255,0.06);scrollbar-width:none;
+}
+nav::-webkit-scrollbar{display:none;}
+nav button{
+  background:none;border:none;border-bottom:3px solid transparent;
+  color:rgba(255,255,255,0.35);font-family:'Inter',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:13px 18px;cursor:pointer;transition:all 0.2s;
+  white-space:nowrap;margin-bottom:-1px;
+}
+nav button:hover{color:rgba(255,255,255,0.7);}
+nav button.active{color:#fff;border-bottom-color:var(--red);}
+
+/* PAGES */
+.page{display:none;}.page.active{display:block;}
+.container{max-width:680px;margin:0 auto;padding:22px 16px 60px;}
+
+/* HERO */
+.hero{
+  background:linear-gradient(135deg,var(--dark) 0%,#2d0808 100%);
+  border-radius:18px;padding:34px 26px;margin-bottom:16px;color:#fff;
+  position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'RRR';position:absolute;right:-8px;bottom:-18px;
+  font-family:'Bebas Neue',sans-serif;font-size:110px;
+  color:rgba(255,255,255,0.04);letter-spacing:6px;pointer-events:none;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(214,40,40,0.18);border:1px solid rgba(214,40,40,0.35);
+  color:#ff8080;font-size:10px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:14px;
+}
+.eyebrow::before{content:'';width:6px;height:6px;background:#ff4444;border-radius:50%;animation:blink 1.5s ease-in-out infinite;}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:3px;line-height:1;margin-bottom:10px;}
+.hero p{color:rgba(255,255,255,0.55);font-size:14px;line-height:1.7;margin-bottom:26px;max-width:360px;}
+.stats-row{display:flex;gap:28px;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;line-height:1;}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,0.3);margin-top:2px;}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,0.05);}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--red);margin-bottom:4px;}
+.card p{color:var(--gray);font-size:13px;line-height:1.6;margin-bottom:14px;}
+
+/* INPUTS */
+input,textarea{
+  width:100%;background:var(--off);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 14px;font-family:'Inter',sans-serif;
+  font-size:14px;color:var(--dark);margin-bottom:12px;outline:none;resize:vertical;
+  transition:border-color 0.2s;
+}
+input:focus,textarea:focus{border-color:var(--red);background:#fff;}
+textarea{min-height:80px;}
+
+/* BTN */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--red);color:#fff;border:none;border-radius:10px;
+  padding:12px 22px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;
+  cursor:pointer;transition:background 0.2s,transform 0.1s;
+}
+.btn:hover{background:var(--red-dark);}
+.btn:active{transform:scale(0.98);}
+
+/* SECTION LABEL */
+.slabel{
+  font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--gray);margin:18px 0 12px;display:flex;align-items:center;gap:10px;
+}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* NEWS */
+.news-item{background:#fff;border:1px solid var(--border);border-left:4px solid var(--red);border-radius:10px;padding:16px 18px;margin-bottom:10px;}
+.news-content{font-size:14px;line-height:1.65;white-space:pre-wrap;}
+.news-meta{font-size:11px;color:var(--gray);margin-top:8px;}
+
+/* TICKETS */
+.ticket-item{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:10px;}
+.ticket-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ticket-user{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;}
+.ticket-avatar{width:32px;height:32px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0;}
+.ticket-badge{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:20px;background:#fff0f0;color:var(--red);border:1px solid #ffcccc;}
+.ticket-reason{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;}
+.ticket-desc{font-size:13px;line-height:1.6;}
+.ticket-time{font-size:11px;color:#c0a8a8;margin-top:8px;}
+
+/* SOCIAL */
+.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.social-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px 14px;text-align:center;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.social-card:hover{transform:translateY(-3px);border-color:var(--red);box-shadow:0 8px 24px rgba(214,40,40,0.1);}
+.sicon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;}
+.sname{font-weight:700;font-size:14px;}
+.sdesc{font-size:11px;color:var(--gray);line-height:1.4;}
+.sbtn{margin-top:4px;background:var(--red);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+.sbtn:hover{background:var(--red-dark);}
+
+.disc-banner{background:linear-gradient(135deg,#5865F2,#3d4fd1);border-radius:16px;padding:26px;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:16px;}
+.disc-banner-icon{font-size:40px;flex-shrink:0;}
+.disc-banner h2{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
+.disc-banner p{color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;margin-bottom:12px;}
+.btn-disc{display:inline-flex;align-items:center;gap:7px;background:#fff;color:#5865F2;border:none;border-radius:8px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;}
+
+/* ROADMAP */
+.rm-item{display:flex;gap:14px;position:relative;}
+.rm-item:not(:last-child)::before{content:'';position:absolute;left:19px;top:42px;width:2px;height:100%;background:var(--border);}
+.rm-dot{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;z-index:1;margin-top:2px;}
+.rm-dot.done{background:var(--red);}
+.rm-dot.now{background:var(--dark);border:2px solid var(--red);}
+.rm-dot.soon{background:var(--off);border:2px solid var(--border);}
+.rm-body{padding-bottom:24px;flex:1;}
+.rm-phase{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:2px;}
+.rm-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:4px;}
+.rm-desc{font-size:13px;color:var(--gray);line-height:1.6;}
+.rm-tag{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:6px;letter-spacing:0.5px;}
+.t-done{background:#fff0f0;color:var(--red);}
+.t-now{background:var(--dark);color:#fff;}
+.t-soon{background:var(--off);color:var(--gray);border:1px solid var(--border);}
+
+/* FAQ */
+.faq-item{border-bottom:1px solid var(--border);padding:15px 0;cursor:pointer;}
+.faq-item:first-child{padding-top:0;}.faq-item:last-child{border:none;padding-bottom:0;}
+.faq-q{font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;user-select:none;}
+.faq-arr{color:var(--red);font-size:18px;flex-shrink:0;transition:transform 0.2s;}
+.faq-item.open .faq-arr{transform:rotate(90deg);}
+.faq-a{font-size:13px;color:var(--gray);line-height:1.7;margin-top:9px;display:none;}
+.faq-item.open .faq-a{display:block;}
+
+/* EMPTY / LOADING */
+.empty{text-align:center;padding:34px 20px;color:var(--gray);}
+.empty-icon{font-size:30px;margin-bottom:10px;opacity:0.4;}
+.empty p{font-size:13px;}
+.loading{text-align:center;padding:26px;color:var(--gray);font-size:13px;}
+.spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 10px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark);color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:999;transition:transform 0.3s;pointer-events:none;border-left:4px solid var(--red);white-space:nowrap;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* SUCCESS */
+#successOverlay{display:none;position:fixed;inset:0;background:rgba(8,2,2,0.92);z-index:200;align-items:center;justify-content:center;}
+#successOverlay.show{display:flex;}
+.suc-box{background:#fff;border-radius:20px;padding:42px 34px;text-align:center;max-width:320px;width:90%;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);border-top:4px solid var(--red);}
+.suc-icon{font-size:46px;margin-bottom:12px;}
+.suc-box h2{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--red);margin-bottom:6px;}
+.suc-box p{color:var(--gray);font-size:13px;line-height:1.6;margin-bottom:20px;}
+
+/* FOOTER */
+footer{background:var(--dark);color:rgba(255,255,255,0.25);text-align:center;padding:26px 20px;font-size:11px;}
+.ft-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;color:rgba(255,255,255,0.55);letter-spacing:4px;margin-bottom:10px;}
+.ft-logo span{color:var(--red);}
+.ft-links{display:flex;justify-content:center;gap:16px;margin:10px 0;flex-wrap:wrap;}
+.ft-links a{color:rgba(255,255,255,0.25);font-size:10px;text-decoration:none;cursor:pointer;transition:color 0.2s;letter-spacing:1.5px;text-transform:uppercase;}
+.ft-links a:hover{color:var(--red);}
+
+@media(max-width:480px){
+  .hero h1{font-size:34px;}
+  .social-grid{grid-template-columns:1fr;}
+  .disc-banner{flex-direction:column;text-align:center;}
+  .bl-card{padding:26px 18px 22px;}
+}
+</style>
+</head>
+<body>
+
+<!-- BOOT LOCK -->
+<div id="bootLock">
+  <div class="bl-logo">REC ROOM <span>REVIVAL</span></div>
+  <div class="bl-sub">Early Access Application</div>
+  <div class="bl-card">
+    <div class="bl-head">
+      <div class="bl-badge">🎮</div>
+      <div>
+        <h2>Join the Beta</h2>
+        <p>Fill every field to unlock the site</p>
+      </div>
+    </div>
+    <div class="bl-dots">
+      <div class="bl-dot" id="dot0"></div>
+      <div class="bl-dot" id="dot1"></div>
+      <div class="bl-dot" id="dot2"></div>
+    </div>
+    <label class="bl-label">Username</label>
+    <input id="bl-username" class="bl-inp" placeholder="Your username" maxlength="32">
+    <label class="bl-label">Why do you want in?</label>
+    <input id="bl-reason" class="bl-inp" placeholder="Short answer" maxlength="80">
+    <label class="bl-label">Tell us more</label>
+    <textarea id="bl-description" class="bl-inp" placeholder="Why should we pick you?" maxlength="500"></textarea>
+    <button id="bl-joinBtn" onclick="bootSubmit()">🔒 Fill out all fields to unlock</button>
+  </div>
+</div>
+
+<header><div class="logo">REC ROOM <span>REVIVAL</span></div></header>
+
+<nav>
+  <button id="nav-home" onclick="showPage('home')" class="active">Home</button>
+  <button id="nav-news" onclick="showPage('news')">News</button>
+  <button id="nav-community" onclick="showPage('community')">Community</button>
+  <button id="nav-roadmap" onclick="showPage('roadmap')">Roadmap</button>
+</nav>
+
+<!-- HOME -->
+<div id="home" class="page active">
+  <div class="container">
+    <div class="hero">
+      <div class="eyebrow">Beta Now Open</div>
+      <h1>Welcome Back<br>To The Rec Room</h1>
+      <p>A community-driven revival of the classic Rec Room experience. Join the waitlist and help shape what comes next.</p>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-num" id="statApplicants">—</div><div class="stat-label">Applicants</div></div>
+        <div class="stat"><div class="stat-num" id="statNews">—</div><div class="stat-label">Updates</div></div>
+      </div>
+    </div>
+    <div class="slabel">Recent Applicants</div>
+    <div id="ticketFeed"><div class="loading"><div class="spinner"></div>Loading applicants...</div></div>
+  </div>
+</div>
+
+<!-- NEWS -->
+<div id="news" class="page">
+  <div class="container">
+    <div class="card">
+      <h2>Post an Update</h2>
+      <p>Share news with the community.</p>
+      <textarea id="newsInput" placeholder="What's new with the project?"></textarea>
+      <button class="btn" onclick="addNews()">Post Update</button>
+    </div>
+    <div class="slabel">Latest Updates</div>
+    <div id="newsFeed"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+  </div>
+</div>
+
+<!-- COMMUNITY -->
+<div id="community" class="page">
+  <div class="container">
+    <div class="disc-banner">
+      <div class="disc-banner-icon">🎮</div>
+      <div>
+        <h2>Join Our Community</h2>
+        <p>Connect with Rec Room Revival fans and get early updates.</p>
+        <a href="https://discord.gg/s9uRYmAfv" target="_blank" class="btn-disc">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.053a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+          Join Discord
+        </a>
+      </div>
+    </div>
+    <div class="slabel">Find Us Online</div>
+    <div class="social-grid">
+      <div class="social-card" onclick="window.open('https://discord.gg/s9uRYmAfv','_blank')">
+        <div class="sicon" style="background:#EEF0FF"><svg width="24" height="24" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.053a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg></div>
+        <div class="sname">Discord</div><div class="sdesc">Chat & support</div>
+        <button class="sbtn">Join</button>
+      </div>
+      <div class="social-card" onclick="window.open('https://twitter.com/RecRoomRevival','_blank')">
+        <div class="sicon" style="background:#E8F5FE"><svg width="22" height="22" viewBox="0 0 24 24" fill="#1DA1F2"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+        <div class="sname">X / Twitter</div><div class="sdesc">Announcements</div>
+        <button class="sbtn">Follow</button>
+      </div>
+      <div class="social-card" onclick="window.open('https://youtube.com/@RecRoomRevival','_blank')">
+        <div class="sicon" style="background:#FFEEEE"><svg width="24" height="24" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>
+        <div class="sname">YouTube</div><div class="sdesc">Trailers & devlogs</div>
+        <button class="sbtn">Subscribe</button>
+      </div>
+      <div class="social-card" onclick="window.open('https://reddit.com/r/RecRoomRevival','_blank')">
+        <div class="sicon" style="background:#FFF0E8"><svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4500"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg></div>
+        <div class="sname">Reddit</div><div class="sdesc">Community posts</div>
+        <button class="sbtn">Visit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROADMAP -->
+<div id="roadmap" class="page">
+  <div class="container">
+    <div class="hero" style="margin-bottom:16px">
+      <div class="eyebrow">Phase 2 Active</div>
+      <h1>The Road Ahead</h1>
+      <p>Our plan to bring Rec Room Revival to life — built in phases, transparently.</p>
+    </div>
+    <div class="card" style="padding-bottom:6px">
+      <h2>Development Roadmap</h2>
+      <p style="margin-bottom:20px">Updated as we hit milestones.</p>
+      <div class="rm-item"><div class="rm-dot done">✓</div><div class="rm-body"><div class="rm-phase">Phase 1</div><div class="rm-title">Project Kickoff</div><div class="rm-desc">Website launched, community formed, core team assembled.</div><span class="rm-tag t-done">Complete</span></div></div>
+      <div class="rm-item"><div class="rm-dot now">🔴</div><div class="rm-body"><div class="rm-phase">Phase 2 — Now</div><div class="rm-title">Beta Applications Open</div><div class="rm-desc">Collecting beta testers and building the core game loop.</div><span class="rm-tag t-now">In Progress</span></div></div>
+      <div class="rm-item"><div class="rm-dot soon">3</div><div class="rm-body"><div class="rm-phase">Phase 3</div><div class="rm-title">Closed Beta Launch</div><div class="rm-desc">Selected testers get access to the first playable build.</div><span class="rm-tag t-soon">Coming Soon</span></div></div>
+      <div class="rm-item"><div class="rm-dot soon">4</div><div class="rm-body"><div class="rm-phase">Phase 4</div><div class="rm-title">Open Beta</div><div class="rm-desc">Doors open wider. More players, stress testing, events.</div><span class="rm-tag t-soon">Planned</span></div></div>
+      <div class="rm-item"><div class="rm-dot soon">🎮</div><div class="rm-body"><div class="rm-phase">Phase 5</div><div class="rm-title">Full Launch</div><div class="rm-desc">The Revival is complete. Rec Room as it was meant to be.</div><span class="rm-tag t-soon">The Dream</span></div></div>
+    </div>
+    <div class="card">
+      <h2>FAQ</h2>
+      <p style="margin-bottom:4px">Got questions? We got answers.</p>
+      <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">What is Rec Room Revival? <span class="faq-arr">›</span></div><div class="faq-a">A community-driven project to recreate the classic Rec Room experience that fans know and love.</div></div>
+      <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Is this official? <span class="faq-arr">›</span></div><div class="faq-a">No — fan-made revival, not affiliated with Rec Room Inc.</div></div>
+      <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">How do I get into the beta? <span class="faq-arr">›</span></div><div class="faq-a">You already applied when you entered the site! We review and reach out to selected testers.</div></div>
+      <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Is it free? <span class="faq-arr">›</span></div><div class="faq-a">Yes. 100% free — we're doing this for the community.</div></div>
+      <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">When does beta start? <span class="faq-arr">›</span></div><div class="faq-a">Join our Discord for the earliest updates — that's where we announce first.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="successOverlay">
+  <div class="suc-box">
+    <div class="suc-icon">🎮</div>
+    <h2>You're In!</h2>
+    <p>Application submitted. We'll reach out when your spot opens. Welcome to the Revival!</p>
+    <button class="btn" style="width:100%;justify-content:center" onclick="goHome()">Go to Home →</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<footer>
+  <div class="ft-logo">REC ROOM <span>REVIVAL</span></div>
+  <div class="ft-links">
+    <a onclick="showPage('home')">Home</a>
+    <a onclick="showPage('news')">News</a>
+    <a onclick="showPage('community')">Community</a>
+    <a onclick="showPage('roadmap')">Roadmap</a>
+    <a href="https://discord.gg/s9uRYmAfv" target="_blank">Discord</a>
+  </div>
+  <div>Fan-made · Not affiliated with Rec Room Inc · © 2026</div>
+</footer>
+
+<script>
+// ── JSONBin shared database — all users see the same data ────────────────────
+const JSONBIN_KEY = '$2a$10$V/Y8Trs0oSs74J9jIZWctu3T4ho/VKVZ/qEhLuAvkIKVtl7aN5bb.';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b';
+
+// Master bin stores the IDs of news+tickets bins so all users share the same ones
+const MASTER_BIN_ID = '6a3ff956da38895dfe0807e9'; // created once, hardcoded
+
+let _binIds = { news: null, tickets: null };
+
+async function getBinIds() {
+  if (_binIds.news && _binIds.tickets) return _binIds;
+  try {
+    const res = await fetch(`${JSONBIN_URL}/${MASTER_BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
+    });
+    const data = await res.json();
+    if (data.record?.news && data.record?.tickets) {
+      _binIds = data.record;
+      return _binIds;
+    }
+  } catch {}
+  return _binIds;
+}
+
+async function ensureBin(type) {
+  const ids = await getBinIds();
+  if (ids[type]) return ids[type];
+
+  // Create bin for this type
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY,
+        'X-Bin-Name': 'rrr-' + type,
+        'X-Bin-Private': 'false'
+      },
+      body: JSON.stringify([])
+    });
+    const data = await res.json();
+    const binId = data.metadata?.id;
+    if (binId) {
+      _binIds[type] = binId;
+      // Save new IDs back to master bin
+      await fetch(`${JSONBIN_URL}/${MASTER_BIN_ID}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+        body: JSON.stringify(_binIds)
+      });
+    }
+    return binId;
+  } catch (e) {
+    console.error('ensureBin error', e);
+    return null;
+  }
+}
+
+async function storageGet(key) {
+  const type = key.includes('news') ? 'news' : 'tickets';
+  const binId = await ensureBin(type);
+  if (!binId) return [];
+  try {
+    const res = await fetch(`${JSONBIN_URL}/${binId}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
+    });
+    const data = await res.json();
+    return Array.isArray(data.record) ? data.record : [];
+  } catch (e) {
+    console.error('storageGet error', e);
+    return [];
+  }
+}
+
+async function storageSet(key, arr) {
+  const type = key.includes('news') ? 'news' : 'tickets';
+  const binId = await ensureBin(type);
+  if (!binId) return;
+  try {
+    await fetch(`${JSONBIN_URL}/${binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY
+      },
+      body: JSON.stringify(arr)
+    });
+  } catch (e) {
+    console.error('storageSet error', e);
+  }
+}
+
+// ── Page nav ──────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'news') loadNews();
+  if (id === 'home') { loadStats(); loadTickets(); }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Format time ───────────────────────────────────────────────────────────────
+function fmt(ts) {
+  return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+// ── Escape HTML ───────────────────────────────────────────────────────────────
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+function toggleFaq(el) { el.classList.toggle('open'); }
+
+// ── NEWS ──────────────────────────────────────────────────────────────────────
+async function addNews() {
+  const text = document.getElementById('newsInput').value.trim();
+  if (!text) { showToast('Write something first.'); return; }
+  const news = await storageGet('rrr-news-v1');
+  news.unshift({ text, ts: Date.now(), id: Math.random().toString(36).slice(2) });
+  await storageSet('rrr-news-v1', news);
+  document.getElementById('newsInput').value = '';
+  showToast('Update posted!');
+  loadNews();
+}
+
+async function loadNews() {
+  const feed = document.getElementById('newsFeed');
+  feed.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+  const news = await storageGet('rrr-news-v1');
+  if (!news.length) { feed.innerHTML = '<div class="empty"><div class="empty-icon">📰</div><p>No updates yet.</p></div>'; return; }
+  feed.innerHTML = news.map(n => `<div class="news-item"><div class="news-content">${esc(n.text)}</div><div class="news-meta">${fmt(n.ts)}</div></div>`).join('');
+}
+
+// ── TICKETS ───────────────────────────────────────────────────────────────────
+async function loadTickets() {
+  const feed = document.getElementById('ticketFeed');
+  if (!feed) return;
+  feed.innerHTML = '<div class="loading"><div class="spinner"></div>Loading applicants...</div>';
+  const tickets = await storageGet('rrr-tickets-v1');
+  if (!tickets.length) { feed.innerHTML = '<div class="empty"><div class="empty-icon">🎮</div><p>No applicants yet. Be the first!</p></div>'; return; }
+  feed.innerHTML = tickets.map(t => `
+    <div class="ticket-item">
+      <div class="ticket-top">
+        <div class="ticket-user"><div class="ticket-avatar">${esc(t.username[0].toUpperCase())}</div>${esc(t.username)}</div>
+        <div class="ticket-badge">Pending</div>
+      </div>
+      <div class="ticket-reason">${esc(t.reason)}</div>
+      <div class="ticket-desc">${esc(t.description)}</div>
+      <div class="ticket-time">${fmt(t.ts)}</div>
+    </div>`).join('');
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const [news, tickets] = await Promise.all([storageGet('rrr-news-v1'), storageGet('rrr-tickets-v1')]);
+  document.getElementById('statApplicants').textContent = tickets.length;
+  document.getElementById('statNews').textContent = news.length;
+}
+
+// ── SUCCESS ───────────────────────────────────────────────────────────────────
+function goHome() {
+  document.getElementById('successOverlay').classList.remove('show');
+  showPage('home');
+}
+
+// ── BOOT LOCK ─────────────────────────────────────────────────────────────────
+document.getElementById('bl-username').addEventListener('input', updateBoot);
+document.getElementById('bl-reason').addEventListener('input', updateBoot);
+document.getElementById('bl-description').addEventListener('input', updateBoot);
+
+function updateBoot() {
+  const u = document.getElementById('bl-username').value.trim();
+  const r = document.getElementById('bl-reason').value.trim();
+  const d = document.getElementById('bl-description').value.trim();
+  const btn = document.getElementById('bl-joinBtn');
+  const filled = [!!u, !!r, !!d];
+  filled.forEach((v, i) => {
+    document.getElementById('dot' + i).classList.toggle('on', v);
+  });
+  const allFilled = u && r && d;
+  btn.classList.toggle('ready', allFilled);
+  btn.textContent = allFilled ? '🎮 Join Beta →' : '🔒 Fill out all fields to unlock';
+}
+
+async function bootSubmit() {
+  const u = document.getElementById('bl-username').value.trim();
+  const r = document.getElementById('bl-reason').value.trim();
+  const d = document.getElementById('bl-description').value.trim();
+  if (!u || !r || !d) {
+    const btn = document.getElementById('bl-joinBtn');
+    btn.style.animation = 'shake 0.4s ease';
+    setTimeout(() => btn.style.animation = '', 400);
+    updateBoot();
+    return;
+  }
+  const btn = document.getElementById('bl-joinBtn');
+  btn.classList.remove('ready');
+  btn.textContent = '⏳ Submitting...';
+  try {
+    const tickets = await storageGet('rrr-tickets-v1');
+    tickets.unshift({ username: u, reason: r, description: d, ts: Date.now(), id: Math.random().toString(36).slice(2) });
+    await storageSet('rrr-tickets-v1', tickets);
+  } catch(e) { console.error(e); }
+  const overlay = document.getElementById('bootLock');
+  overlay.style.transition = 'opacity 0.5s';
+  overlay.style.opacity = '0';
+  setTimeout(() => { overlay.style.display = 'none'; showPage('home'); loadStats(); loadTickets(); }, 500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadStats();
+loadTickets();
+</script>
+</body>
+</html>
